@@ -1,16 +1,19 @@
-var ssdp = require("peer-ssdp"),
-	peer = ssdp.createPeer(),
-	uuid = require('node-uuid'),
-	myUuid = uuid.v4(),
-	fs = require('fs'),
-	express = require('express'),
-	http = require('http'),
-	app = express(),
-	querystring = require('querystring'),
-	request = require('superagent')
-	logger = require('morgan')
-	bodyParser = require('body-parser')
-	methodOverride = require('method-override');
+//var ssdp = require("peer-ssdp"),
+//	peer = ssdp.createPeer(),
+
+var uuid = require('node-uuid'),
+    myUuid = uuid.v4(),
+    fs = require('fs'),
+    express = require('express'),
+    http = require('http'),
+    app = express(),
+    querystring = require('querystring'),
+    request = require('superagent')
+    logger = require('morgan')
+    bodyParser = require('body-parser')
+    methodOverride = require('method-override');
+
+
 var argv = require('optimist')
     .usage('Usage: $0 --name [name] --ipaddress [ipaddress]')
     .demand(['name', 'ipaddress'])
@@ -171,7 +174,7 @@ function setupRoutes(addr) {
 			res.type('xml');
 			res.setHeader("Access-Control-Allow-Method", "GET, POST, DELETE, OPTIONS");
 			res.setHeader("Access-Control-Expose-Headers", "Location");
-			res.setHeader("Application­URL", "http://"+req.headers.host+"/apps/");
+			res.setHeader("Application­URL", "http://"+ipaddress+"/apps");
 			res.send(data);
 		});
 	});
@@ -209,26 +212,53 @@ function setupRoutes(addr) {
 }
 
 function setupSSDP(addr) {
-	peer.on("ready",function(){
-	});
 
-	peer.on("notify",function(headers, address){
-	});
+    var ssdp = require("node-ssdp");
+    var ssdpServer = new ssdp.Server({
+//        logLevel: 'TRACE',
+//        unicastHost: ipaddress,
+        location: 'http://'+ ipaddress + ':8008/ssdp/device-desc.xml',
+        udn: 'uuid:' + myUuid
+    });
 
-	peer.on("search",function(headers, address){
 
-		if(headers.ST.indexOf("dial-multiscreen-org:service:dial:1") !== -1) {
-                        console.log("Replied via ssdp to DIAL request from " + address.address);
-			peer.reply({
-				LOCATION: "http://"+addr+":8008/ssdp/device-desc.xml",
-				ST: "urn:dial-multiscreen-org:service:dial:1",
-				"CONFIGID.UPNP.ORG": 7337,
-				"BOOTID.UPNP.ORG": 7337,
-				USN: "uuid:"+myUuid
-			}, address);
-		}
-	});
+    ssdpServer.on('response', function(headers, statusCode, rinfo) {
+        console.log(arguments);
+    });
 
-	peer.start();
+    ssdpServer.addUSN('upnp:rootdevice')
+    ssdpServer.addUSN('urn:dial-multiscreen-org:service:dial:1');
+    ssdpServer.start();
+
+    process.on('exit', function(){
+      ssdpServer.stop() // advertise shutting down and stop listening
+    });
+
+//
+//	peer.on("ready",function(){
+//
+////            console.log("SSDP:READY", arguments);
+//
+//
+//            peer.on("notify",function(headers, address){
+//    //            console.log("SSDP:NOTIFY", arguments);
+//            });
+//
+//            peer.on("search",function(headers, address){
+//
+//                    if(headers.ST.indexOf("dial-multiscreen-org:service:dial:1") !== -1) {
+//                            console.log("Replied via ssdp to DIAL request from " + address.address);
+//                            console.log("SSDP:SEARCH:DIAL", headers);
+//                            peer.reply({
+//                                    LOCATION: "http://"+addr+":8008/ssdp/device-desc.xml",
+//                                    ST: "urn:dial-multiscreen-org:service:dial:1",
+//                                    "CONFIGID.UPNP.ORG": 7337,
+//                                    "BOOTID.UPNP.ORG": 7337,
+//                                    USN: "uuid:"+myUuid
+//                            }, address);
+//                    }
+//            });
+//	});
+//	peer.start();
 }
 //
