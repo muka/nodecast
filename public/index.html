@@ -1,3 +1,4 @@
+<!doctype html>
 <html>
 	<head>
 	<link rel="stylesheet" href="css/main.css">
@@ -7,11 +8,11 @@
 	$(document).ready(function() {
 				$('#idle').cycle({
 				fx: 'fade',
-				pager: '#smallnav', 
-				pause:   1, 
+				pager: '#smallnav',
+				pause:   1,
 				speed: 3600,
-				timeout:  3500 
-			});			
+				timeout:  3500
+			});
 		});
 
             var ws = new WebSocket("ws://localhost:8008/stage");

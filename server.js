@@ -12,10 +12,12 @@ var ssdp = require("peer-ssdp"),
 	bodyParser = require('body-parser')
 	methodOverride = require('method-override');
 var argv = require('optimist')
-    .usage('Usage: $0 --name [name]')
-    .demand(['name'])
+    .usage('Usage: $0 --name [name] --ipaddress [ipaddress]')
+    .demand(['name', 'ipaddress'])
     .argv;
 var name = argv.name;
+var ipaddress = argv.ipaddress;
+
 
 app.set('port', 8008);
 
@@ -30,7 +32,7 @@ app.use(function(req, res, next) {
 		next();
 	});
 });
-app.disable('x-powered-by');
+
 app.use(express.static(__dirname + '/public'));
 app.use(logger());
 app.use(bodyParser());
@@ -126,6 +128,9 @@ wssRouter.mount(regex, '', function(request) {
 });
 
 function getIPAddress() {
+
+        if(ipaddress) return ipaddress
+
 	var n = require('os').networkInterfaces();
 	var ip = []
 	for (var k in n) {
@@ -166,7 +171,7 @@ function setupRoutes(addr) {
 			res.type('xml');
 			res.setHeader("Access-Control-Allow-Method", "GET, POST, DELETE, OPTIONS");
 			res.setHeader("Access-Control-Expose-Headers", "Location");
-			res.setHeader("Application-Url", "http://"+req.headers.host+"/apps");
+			res.setHeader("Application­URL", "http://"+req.headers.host+"/apps/");
 			res.send(data);
 		});
 	});
@@ -185,6 +190,7 @@ function setupRoutes(addr) {
 	});
 
 	app.get('/apps', function(req, res){
+                console.log("Requested /apps");
 		for (var key in Apps.registered) {
 			if(Apps.registered[key].config.state == "running") {
 				console.log("Redirecting to"+ key);
@@ -210,7 +216,9 @@ function setupSSDP(addr) {
 	});
 
 	peer.on("search",function(headers, address){
-		if(headers.ST.indexOf("dial-multiscreen-org:service:dial:1") != -1) {
+
+		if(headers.ST.indexOf("dial-multiscreen-org:service:dial:1") !== -1) {
+                        console.log("Replied via ssdp to DIAL request from " + address.address);
 			peer.reply({
 				LOCATION: "http://"+addr+":8008/ssdp/device-desc.xml",
 				ST: "urn:dial-multiscreen-org:service:dial:1",

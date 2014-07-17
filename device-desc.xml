@@ -6,15 +6,15 @@
         </specVersion>
         <URLBase>#base#</URLBase>
         <device>
-            <deviceType>urn:schemas-upnp-org:device:dail:1</deviceType>
+            <deviceType>urn:schemas-upnp-org:device:dial:1</deviceType>
             <friendlyName>#name#</friendlyName>
             <manufacturer>Google Inc.</manufacturer>
             <modelName>Eureka Dongle</modelName>
             <UDN>uuid:#uuid#</UDN>
             <serviceList>
                 <service>
-                    <serviceType>urn:schemas-upnp-org:service:dail:1</serviceType>
-                    <serviceId>urn:upnp-org:serviceId:dail</serviceId>
+                    <serviceType>urn:schemas-upnp-org:service:dial:1</serviceType>
+                    <serviceId>urn:upnp-org:serviceId:dial</serviceId>
                     <controlURL>/ssdp/notfound</controlURL>
                     <eventSubURL>/ssdp/notfound</eventSubURL>
                     <SCPDURL>/ssdp/notfound</SCPDURL>
