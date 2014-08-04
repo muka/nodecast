@@ -15,28 +15,32 @@
 			});
 		});
 
-            var ws = new WebSocket("ws://localhost:8008/stage");
-            var windows = {};
 
-            ws.onmessage = function (e) {
-                var cmd = $.parseJSON(e.data);
+            $.getJSON('/config.json', function(config) {
 
-                if(cmd.cmd == "show") {
-                    $('#idle_container').fadeOut('slow');
+                var ws = new WebSocket("ws://"+ config.addr +":"+ config.port +"/stage");
+                var windows = {};
 
-                    var url = cmd.url;
-                    var windowName = "popUp";//$(this).attr("name");
-		    var windowSize = 'width='+screen.width;', height='+screen.height;
+                ws.onmessage = function (e) {
+                    var cmd = $.parseJSON(e.data);
 
-                    windows[cmd.app] = window.open(url, windowName, windowSize);
-                   // window.location = url;
-                } else if(cmd.cmd == "idle") {
-                    $('#idle_container').fadeIn('slow');
-                } else if(cmd.cmd == "close") {
-                    $('#idle_container').fadeIn('slow');
-                    windows[cmd.app].close();
-                }
-            };
+                    if(cmd.cmd == "show") {
+                        $('#idle_container').fadeOut('slow');
+
+                        var url = cmd.url;
+                        var windowName = "popUp";//$(this).attr("name");
+                        var windowSize = 'width='+screen.width;', height='+screen.height;
+
+                        windows[cmd.app] = window.open(url, windowName, windowSize);
+                       // window.location = url;
+                    } else if(cmd.cmd == "idle") {
+                        $('#idle_container').fadeIn('slow');
+                    } else if(cmd.cmd == "close") {
+                        $('#idle_container').fadeIn('slow');
+                        windows[cmd.app].close();
+                    }
+                };
+            });
         </script>
 	</head>
 	<body>

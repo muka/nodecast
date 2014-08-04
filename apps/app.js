@@ -49,7 +49,7 @@ App.prototype.registerSession = function(connection) {
 	});
 
 	connection.on('close', function(closeReason, description) {
-		var i = me.remotes.indexOf(connection);	
+		var i = me.remotes.indexOf(connection);
 		me.remotes.splice(i,1);
 		console.log("Closed SessionChannel");
 	});
@@ -75,7 +75,7 @@ App.prototype.registerReceiver = function(connection) {
 	});
 
 	connection.on('close', function(closeReason, description) {
-		var i = me.receivers.indexOf(connection);	
+		var i = me.receivers.indexOf(connection);
 		me.receivers.splice(i,1);
 		console.log("Closed ReceiverChannel");
 	});
@@ -91,7 +91,7 @@ App.prototype.registerReceiver = function(connection) {
 App.prototype.getProtocols = function() {
 	var p = "";
 
-	if(this.config.state == "running") {
+	if(this.config.state === "running") {
 		for(var i = 0; i < this.config.protocols.length; i++) {
 			p += "<protocol>"+this.config.protocols[i]+"</protocol>";
 		}
@@ -103,8 +103,9 @@ App.prototype.getProtocols = function() {
 App.prototype.registerApi = function(app) {
 	var me = this;
 	app.get("/apps/"+me.config.name, function(req, res) {
-		fs.readFile('./app.xml', 'utf8', function (err,data) {
-			data = data.replace("#name#", me.config.name)
+		fs.readFile(__dirname + '/../app.xml', 'utf8', function (err,data) {
+			data = data
+                                .replace("#name#", me.config.name)
 				.replace("#connectionSvcURL#",me.config.connectionSvcURL)
 				.replace('#protocols#',me.getProtocols())
 				.replace('#state#', me.config.state)
@@ -122,7 +123,7 @@ App.prototype.registerApi = function(app) {
 		me.config.link = "";
 		me.config.connectionSvcURL = "";
 
-		fs.readFile('./app.xml', 'utf8', function (err,data) {
+		fs.readFile(__dirname + '/../app.xml', 'utf8', function (err,data) {
 
 			if(global.stageConnection)
 				global.stageConnection.send(JSON.stringify({
