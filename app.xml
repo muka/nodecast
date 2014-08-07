@@ -11,4 +11,5 @@
         </servicedata>
         <state>#state#</state>
         #link#
+        #additionalData#
     </service>

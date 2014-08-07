@@ -13,9 +13,9 @@ Apps.prototype.init = function(fs, app) {
     var me = this;
 };
 
-Apps.prototype.registerApp = function(express, addr, name, url, protocols) {
+Apps.prototype.registerApp = function(express, addr, name, url, protocols, opts) {
 
-    var app = new App(addr, name, url, protocols);
+    var app = new App(addr, name, url, protocols, opts);
     app.log = log;
     app.registerApi(express);
 

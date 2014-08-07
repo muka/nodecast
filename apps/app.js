@@ -3,9 +3,10 @@ var querystring = require('querystring');
 
 var log;
 
-function App(addr, name, url, protocols) {
+function App(addr, name, url, protocols, opts) {
 
     this.addr = addr;
+    this.opts = opts || {};
 
     log = this.log;
 
@@ -118,11 +119,28 @@ App.prototype.registerApi = function(app) {
                     .replace('#protocols#', me.getProtocols())
                     .replace('#state#', me.config.state)
                     .replace('#link#', me.config.link);
-            res.type('xml');
-            res.setHeader("Access-Control-Allow-Method", "GET, POST, DELETE, OPTIONS");
-            res.setHeader("Access-Control-Expose-Headers", "Location");
-            res.setHeader("Cache-control", "no-cache, must-revalidate, no-store");
-            res.send(data);
+
+            var _sendreply = function(_data) {
+                res.type('xml');
+                res.setHeader("Access-Control-Allow-Method", "GET, POST, DELETE, OPTIONS");
+                res.setHeader("Access-Control-Expose-Headers", "Location");
+                res.setHeader("Cache-control", "no-cache, must-revalidate, no-store");
+                res.send(_data);
+            }
+
+            if(typeof me.opts.additionalData === 'function') {
+
+                me.opts.additionalData(function(str) {
+                    data = data.replace("#additionalData#", str);
+                    _sendreply(data);
+                });
+            }
+            else {
+                data = data.replace("#additionalData#", "");
+                _sendreply(data);
+            }
+
+
         });
     });
 
@@ -145,6 +163,7 @@ App.prototype.registerApi = function(app) {
                     .replace('#protocols#', me.getProtocols())
                     .replace('#state#', me.config.state)
                     .replace('#link#', me.config.link);
+
             res.type('xml');
             res.setHeader("Access-Control-Allow-Method", "GET, POST, DELETE, OPTIONS");
             res.setHeader("Access-Control-Expose-Headers", "Location");

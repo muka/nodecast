@@ -66,7 +66,7 @@ var baseConfig = {
 
     log: log,
     debug: false,
-    
+
     addr: null,
     port: 8008,
 
@@ -267,7 +267,7 @@ lib.setupApps = function() {
     Apps.init(fs, app);
 
     config.apps.forEach(function(appInfo) {
-        Apps.registerApp(app, config.addr, appInfo.name, appInfo.url, appInfo.protocols || "");
+        lib.addApp(appInfo);
     });
 
     lib.Apps = Apps;
@@ -275,7 +275,7 @@ lib.setupApps = function() {
 
 lib.addApp = function(appInfo) {
     if(Apps) {
-        Apps.registerApp(app, config.addr, appInfo.name, appInfo.url, appInfo.protocols || "");
+        Apps.registerApp(app, config.addr, appInfo.name, appInfo.url, appInfo.protocols || "", appInfo.opts || {});
     }
 };
 
