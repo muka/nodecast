@@ -1,7 +1,6 @@
 var ssdp = require("peer-ssdp"),
-        peer = ssdp.createPeer()
-
-var uuid = require('node-uuid'),
+    peer = ssdp.createPeer(),
+    uuid = require('node-uuid'),
     util = require('util'),
     fs = require('fs'),
     merge = require('merge'),
@@ -9,15 +8,16 @@ var uuid = require('node-uuid'),
     http = require('http'),
     app = express(),
     querystring = require('querystring'),
-    request = require('superagent')
-    logger = require('morgan')
-    bodyParser = require('body-parser')
+    request = require('superagent'),
+    logger = require('morgan'),
+    bodyParser = require('body-parser'),
     methodOverride = require('method-override')
     ;
 
+
+var log = console.log;
+
 var lib = module.exports = {};
-
-
 var config = {};
 
 var defaultApps = [
@@ -64,21 +64,49 @@ var defaultApps = [
 var baseConfig = {
     name: "MyCast",
 
+    log: log,
+    debug: false,
+    
     addr: null,
     port: 8008,
 
-    apps: defaultApps,
+    apps: [],
 
     publicDir: __dirname + '/public',
     uuid: uuid.v4(),
+
+    // eg "*"
+    cors: null,
+};
+
+lib.config = function(_config) {
+
+    if(_config) {
+
+        config = merge(baseConfig, _config);
+
+        config.addr = config.addr || lib.getIPAddress();
+        config.apps = [];
+
+        var _apps = {};
+        for(var i in defaultApps) _apps[defaultApps[i].name] = defaultApps[i];
+        for(var i in _config.apps) _apps[_config.apps[i].name] = _config.apps[i];
+
+        for(var i in _apps) config.apps.push(_apps[i]);
+    }
+
+    if(config.log) {
+        log = config.log;
+    }
+
+    return config;
 };
 
 lib.start = function(_config) {
 
-    config = merge(baseConfig, _config);
-    config.addr = config.addr || lib.getIPAddress();
+    lib.config(_config);
 
-    console.log("Server %s, uuid %s", config.name, config.uuid);
+    log("Server %s, uuid %s", config.name, config.uuid);
 
     lib.setupHttp();
     lib.setupApps();
@@ -101,8 +129,19 @@ lib.setupHttp = function() {
         });
     });
 
+    if(config.cors) {
+        app.use(function(req,res,next) {
+            res.setHeader("Access-Control-Allow-Origin", config.cors);
+            next();
+        });
+    }
+
     app.use(express.static(config.publicDir));
-    app.use(logger());
+
+    if(config.debug) {
+        app.use(logger());
+    }
+
     app.use(bodyParser());
     app.use(methodOverride());
     app.use(function(req, res, next) {
@@ -115,7 +154,7 @@ lib.setupHttp = function() {
     var server = http.createServer(app);
 
     server.listen(app.get('port'), config.addr, function() {
-        console.log('Server started on http://' + config.addr + ':' + config.port);
+        log('Server started on http://' + config.addr + ':' + config.port);
     });
 
     app.get('/config.json', function(req, res) {
@@ -153,7 +192,7 @@ lib.setupHttp = function() {
 
     wssRouter.mount('/system/control', '', function(request) {
         var connection = request.accept(request.origin);
-        console.log("system/control");
+        log("system/control");
     });
 
     wssRouter.mount('/connection', '', function(request) {
@@ -190,7 +229,7 @@ lib.setupHttp = function() {
     var regex = new RegExp('^/session/.*$');
     wssRouter.mount(regex, '', function(request) {
         var sessionConn = request.accept(request.origin);
-        console.log("Session up");
+        log("Session up");
 
         var appName = request.resourceURL.pathname.replace('/session/', '');
         var sessionId = request.resourceURL.search.replace('?', '');
@@ -209,20 +248,21 @@ lib.getIPAddress = function() {
     var ip = []
     for (var k in n) {
         var inter = n[k];
-        console.log(inter);
+        log(inter);
         for (var j in inter) {
 
             if (inter[j].family === 'IPv4' && !inter[j].internal) {
-                return inter[j].address
+                return inter[j].address;
             }
         }
     }
-}
+};
 
 var Apps;
 lib.setupApps = function() {
 
     Apps = require('./apps/apps.js');
+    Apps.log = log;
 
     Apps.init(fs, app);
 
@@ -231,6 +271,12 @@ lib.setupApps = function() {
     });
 
     lib.Apps = Apps;
+};
+
+lib.addApp = function(appInfo) {
+    if(Apps) {
+        Apps.registerApp(app, config.addr, appInfo.name, appInfo.url, appInfo.protocols || "");
+    }
 };
 
 lib.setupRoutes = function() {
@@ -250,7 +296,7 @@ lib.setupRoutes = function() {
     });
 
     app.post('/connection/:app', function(req, res) {
-        console.log("Connecting App " + req.params.app);
+        log("Connecting App " + req.params.app);
 
         res.setHeader("Access-Control-Allow-Method", "POST, OPTIONS");
         res.setHeader("Access-Control-Allow-Headers", "Content-Type");
@@ -259,14 +305,14 @@ lib.setupRoutes = function() {
         res.send(JSON.stringify({
             URL: "ws://" + config.addr + ":"+config.port+"/session/" + req.params.app + "?1",
             pingInterval: 3
-        }))
+        }));
     });
 
     app.get('/apps', function(req, res) {
-        console.log("Requested /apps");
+        log("Requested /apps");
         for (var key in Apps.registered) {
             if (Apps.registered[key].config.state == "running") {
-                console.log("Redirecting to" + key);
+                log("Redirecting to" + key);
                 res.redirect('/apps/' + key);
                 return;
             }
@@ -285,14 +331,14 @@ lib.setupSSDP = function() {
 
     peer.on("ready", function() {
 //        peer.on("notify", function(headers, address) {
-//            console.log("SSDP:NOTIFY", arguments);
+//            log("SSDP:NOTIFY", arguments);
 //        });
 
         peer.on("search", function(headers, address) {
 
             if (headers.ST.indexOf("dial-multiscreen-org:service:dial:1") !== -1) {
-//                console.log("Replied via ssdp to DIAL request from " + address.address);
-//                console.log("SSDP:SEARCH:DIAL", headers);
+//                log("Replied via ssdp to DIAL request from " + address.address);
+//                log("SSDP:SEARCH:DIAL", headers);
                 peer.reply({
                     LOCATION: "http://" + config.addr + ":"+ config.port +"/ssdp/device-desc.xml",
                     ST: "urn:dial-multiscreen-org:service:dial:1",
